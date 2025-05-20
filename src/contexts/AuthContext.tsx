@@ -1,109 +1,77 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User as SupabaseUser } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
-import { Database } from '../types/supabase';
-
-type UserRole = Database['public']['Tables']['users']['Row']['role'];
-
-interface AuthUser {
-  id: string;
-  email: string;
-  role: UserRole;
-  fullName: string;
-  status: 'active' | 'inactive';
-}
+import { User, Permission, UserRole } from '../types';
 
 interface AuthContextType {
-  user: AuthUser | null;
-  loading: boolean;
+  user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-  hasRole: (role: UserRole | UserRole[]) => boolean;
+  logout: () => void;
+  hasPermission: (permission: Permission) => boolean;
+  hasRole: (role: UserRole) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Mock user data - replace with actual authentication logic
+const mockUser: User = {
+  id: 'user-1',
+  name: 'Dr. Rafael Mendes',
+  email: 'rafael.mendes@mindspace.com',
+  role: 'admin',
+  permissions: [
+    'manage_users',
+    'view_financial',
+    'manage_appointments',
+    'manage_patients',
+    'manage_psychologists',
+    'view_consultation_notes',
+    'manage_consultation_notes',
+    'view_dashboard',
+    'manage_settings'
+  ],
+  status: 'active',
+  lastLogin: new Date().toISOString()
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    // Check active sessions and sets the user
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        fetchUserData(session.user);
-      }
-      setLoading(false);
-    });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        await fetchUserData(session.user);
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    // Simulate loading user from storage
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
   }, []);
 
-  const fetchUserData = async (authUser: SupabaseUser) => {
-    const { data: userData, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', authUser.id)
-      .single();
-
-    if (error) {
-      console.error('Error fetching user data:', error);
-      return;
-    }
-
-    if (userData) {
-      setUser({
-        id: userData.id,
-        email: authUser.email!,
-        role: userData.role,
-        fullName: userData.full_name,
-        status: userData.status
-      });
-    }
-  };
-
   const login = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // For demo purposes, always return mock user
+      setUser(mockUser);
+      localStorage.setItem('user', JSON.stringify(mockUser));
+    } catch (error) {
+      console.error('Login failed:', error);
       throw error;
     }
   };
 
-  const logout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      throw error;
-    }
+  const logout = () => {
     setUser(null);
+    localStorage.removeItem('user');
   };
 
-  const hasRole = (roles: UserRole | UserRole[]): boolean => {
-    if (!user) return false;
-    return Array.isArray(roles) 
-      ? roles.includes(user.role)
-      : user.role === roles;
+  const hasPermission = (permission: Permission): boolean => {
+    return user?.permissions.includes(permission) ?? false;
+  };
+
+  const hasRole = (role: UserRole): boolean => {
+    return user?.role === role;
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, hasRole }}>
+    <AuthContext.Provider value={{ user, login, logout, hasPermission, hasRole }}>
       {children}
     </AuthContext.Provider>
   );
