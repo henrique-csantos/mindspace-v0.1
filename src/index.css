@@ -18,6 +18,14 @@ body {
 }
 
 @layer base {
+  *, ::before, ::after {
+    box-sizing: border-box;
+    border-width: 0;
+    border-style: solid;
+    border-color: #e5e7eb;
+    padding-top: 2rem; /* Adicionado conforme solicitado */
+  }
+
   body {
     @apply bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white;
   }
@@ -71,6 +79,6 @@ body {
   }
   to {
     transform: translateY(0);
-    opacity: 1;
-  }
+    opacity: 1;
+  }
 }
