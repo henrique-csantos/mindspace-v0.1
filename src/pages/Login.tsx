@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { BrainCircuit } from 'lucide-react';
 import Button from '../components/ui/Button';
@@ -12,6 +12,9 @@ const Login: React.FC = () => {
   
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const from = (location.state as any)?.from?.pathname || '/';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,9 +23,9 @@ const Login: React.FC = () => {
 
     try {
       await login(email, password);
-      navigate('/', { replace: true });
-    } catch (err) {
-      setError('Falha no login. Por favor, verifique suas credenciais.');
+      navigate(from, { replace: true });
+    } catch (err: any) {
+      setError(err.message || 'Falha no login. Por favor, verifique suas credenciais.');
     } finally {
       setIsLoading(false);
     }

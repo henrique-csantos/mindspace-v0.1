@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/layout/ProtectedRoute';
 import MainLayout from './components/layout/MainLayout';
 import Dashboard from './pages/Dashboard';
 import CalendarPage from './pages/Calendar';
@@ -10,17 +11,6 @@ import Patients from './pages/Patients';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import UserManagement from './pages/UserManagement';
-import { useAuth } from './contexts/AuthContext';
-
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
-  
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-  
-  return <>{children}</>;
-};
 
 function App() {
   return (
@@ -40,10 +30,38 @@ function App() {
             >
               <Route index element={<Dashboard />} />
               <Route path="calendar" element={<CalendarPage />} />
-              <Route path="psychologists" element={<Psychologists />} />
-              <Route path="patients" element={<Patients />} />
-              <Route path="settings" element={<Settings />} />
-              <Route path="users" element={<UserManagement />} />
+              <Route 
+                path="psychologists" 
+                element={
+                  <ProtectedRoute roles={['admin', 'receptionist']}>
+                    <Psychologists />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="patients" 
+                element={
+                  <ProtectedRoute roles={['admin', 'receptionist', 'psychologist']}>
+                    <Patients />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="settings" 
+                element={
+                  <ProtectedRoute roles={['admin']}>
+                    <Settings />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="users" 
+                element={
+                  <ProtectedRoute roles={['admin']}>
+                    <UserManagement />
+                  </ProtectedRoute>
+                } 
+              />
             </Route>
           </Routes>
         </Router>
